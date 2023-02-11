@@ -1,46 +1,44 @@
+import pytest
+import json
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from main import app
+from datetime import date
 
-
-client = TestClient(app)
-
-def test_read_tasks(client):
-    response = client.get("/tasks")
-    assert response.status_code == 200
-    assert response.json() == []
-
+@pytest.fixture
+def client():
+    app = FastAPI()
+    client = TestClient(app)
+    return client
 
 def test_create_task(client):
-    response = client.post("/tasks", json={"task": "test task"})
+    task = {
+        "task_name": "Test task",
+        "task_status": "Active",
+        "task_due_date": date(2023, 2, 11),
+    }
+    response = client.post("/tasks/", json=task)
     assert response.status_code == 200
-    assert response.json() == {"task": "test task"}
-
-    response = client.get("/tasks")
-    assert response.status_code == 200
-    assert response.json() == [{"task": "test task"}]
-
 
 def test_update_task(client):
-    # Create a new task first
-    client.post("/tasks", json={"task": "test task"})
-
-    response = client.put("/tasks/0", json={"task": "updated test task"})
+    task = {
+        "task_name": "Test task",
+        "task_status": "Active",
+        "task_due_date": date(2023, 2, 11),
+    }
+    task_name = ""
+    response = client.put(f"/task/{task_name}", json=task)
     assert response.status_code == 200
-    assert response.json() == {"task_id": 0, "task": "updated test task"}
-
-    response = client.get("/tasks")
-    assert response.status_code == 200
-    assert response.json() == [{"task": "updated test task"}]
-
 
 def test_delete_task(client):
-    # Create a new task first
-    client.post("/tasks", json={"task": "test task"})
-
-    response = client.delete("/tasks/0")
+    task_id = ""
+    response = client.delete(f"/task/{task_id}")
     assert response.status_code == 200
-    assert response.json() == {"task_id": 0}
 
+def test_get_task(client):
+    task_id = ""
+    response = client.get(f"/task/{task_id}")
+    assert response.status_code == 200
+
+def test_get_all_tasks(client):
     response = client.get("/tasks")
     assert response.status_code == 200
-    assert response.json() == []

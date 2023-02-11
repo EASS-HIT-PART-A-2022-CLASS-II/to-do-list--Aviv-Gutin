@@ -1,39 +1,76 @@
 import json
-import redis
 from fastapi import FastAPI
-from redisjson import Client
+from fastapi.middleware.cors import CORSMiddleware
+import uuid
+import redis
+from datetime import date
+from dataclasses import dataclass, asdict
+from json import dumps
 
 
-r = redis.Redis()
-redis_json = Client(r)
 app = FastAPI()
-TASKS_KEY = "tasks"
+r = redis.Redis(host="redis", port=6379)
 
 
+@dataclass
+class Task:
+     # Indexed for exact text matching
+    task_name: str
+    task_status: str
+    task_due_date: date
+    @property
+    def __dict__(self):
+        """
+        get a python dictionary
+        """
+        return asdict(self)
+
+    @property
+    def json(self):
+        """
+        get the json formated string
+        """
+        return dumps(self.__dict__)
+
+
+# Create a new task.
+@app.post("/tasks/")
+def create_task(task: Task):
+    new_task = json.dumps(asdict(task))
+    r.set(str(uuid.uuid4()), new_task)
+    return {}
+
+
+#update task
+@app.put("/task/{item_id}")
+async def read_item(item_id: str, task: Task):
+    new_task = json.dumps(asdict(task))
+    task = r.set(item_id, new_task)
+    return {"update": task}
+
+
+#delete task
+
+@app.delete("/task/{item_id}")
+async def read_item(item_id: str):
+    task = r.delete(item_id)
+    return {"update": task}
+
+
+#get task
+@app.get("/task/{item_id}")
+async def read_item(item_id):
+    task = r.get(item_id)
+    return {"task": json.loads(task)}
+
+
+#get all tasks
 @app.get("/tasks")
-def read_tasks():
-   return redis_json.jsonget(TASKS_KEY, [])
-
-
-@app.post("/tasks")
-def create_task(task: str):
-   tasks = redis_json.jsonget(TASKS_KEY, [])
-   tasks.append({"task": task})
-   redis_json.jsonset(TASKS_KEY, tasks)
-   return {"task": task}
-
-
-@app.put("/tasks/{task_id}")
-def update_task(task_id: int, task: str):
-   tasks = redis_json.jsonget(TASKS_KEY, [])
-   tasks[task_id] = {"task": task}
-   redis_json.jsonset(TASKS_KEY, tasks)
-   return {"task_id": task_id, "task": task}
-
-
-@app.delete("/tasks/{task_id}")
-def delete_task(task_id: int):
-   tasks = redis_json.jsonget(TASKS_KEY, [])
-   tasks.pop(task_id)
-   redis_json.jsonset(TASKS_KEY, tasks)
-   return {"task_id": task_id}
+async def read_item():
+    tasks = r.keys()
+    res = []
+    for key in tasks:
+        task = json.loads(r.get(key))
+        task["id"] = key
+        res.append(task)
+    return res
