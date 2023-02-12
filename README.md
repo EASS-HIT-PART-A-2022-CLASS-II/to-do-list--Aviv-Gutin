@@ -3,7 +3,7 @@
 This project is a to-do-list application built with:
 
 - Docker Compose
-- FastAP
+- FastAPI
 - Streamlit 
 
 The application allows users to:
@@ -50,3 +50,6 @@ This section allows you to delete an existing task. Select the task you want to 
 - FastAPI - A modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python type hints.
 - Streamlit - An open-source app framework for Machine Learning and Data Science teams.
 - Redis - An open source, in-memory data structure store, used as a database, cache, and message broker.
+
+# Video
+- https://youtu.be/NfPbEM4QPNk
